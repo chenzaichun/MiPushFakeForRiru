@@ -1,29 +1,22 @@
 ext {
-    moduleId = "mipush_fake"
-    moduleName = "MiPushFake"
+    gitCommitId = 'git rev-parse --short HEAD'.execute([], project.rootDir).text.trim()
+    gitCommitCount = Integer.parseInt('git rev-list --count HEAD'.execute([], project.rootDir).text.trim())
+	
+	moduleMinRiruApiVersion = 25
+    moduleMinRiruVersionName = "v25.0.0"
+    moduleRiruApiVersion = 25
+
+    magiskModuleId = "riru-mipushfake"
+	moduleLibraryName = "mipushfake"
+	
+    moduleName = "Riru - MiPushFake"
     moduleAuthor = "Timothy Zhang"
-    moduleDescription = "Fake as XiaoMI device by hook system_property_get."
-    moduleVersion = "v13"
-    moduleVersionCode = 13
-    moduleMinRiruApiVersion = 9
-    moduleMinRiruVersionName = "v22.0"
-    moduleMaxRiruApiVersion = 9
+    moduleDescription = "Fake as XiaoMI device by changing system properties in related packages."
 
-    moduleProp = [
-            name       : moduleName,
-            version    : moduleVersion,
-            versionCode: moduleVersionCode.toString(),
-            author     : moduleAuthor,
-            description: moduleDescription,
-            minApi     : moduleMinRiruApiVersion
-    ]
+    moduleVersionMajor = 14
+    moduleVersionMinor = 0
+    moduleVersionPatch = 0
+    moduleVersion = "v${moduleVersionMajor}.${moduleVersionMinor}.${moduleVersionPatch}.r${gitCommitCount}.${gitCommitId}"
+    moduleVersionCode = gitCommitCount
 
-    magiskModuleProp = [
-            id         : "riru_$moduleId",
-            name       : "Riru - ${moduleProp['name']}",
-            version    : moduleProp['version'],
-            versionCode: moduleProp['versionCode'],
-            author     : moduleProp['author'],
-            description: moduleProp['description']
-    ]
 }

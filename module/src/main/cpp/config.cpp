@@ -4,15 +4,26 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/system_properties.h>
+#include <riru.h>
 #include "config.h"
 #include "misc.h"
 #include "logging.h"
 
 using namespace Config;
 
-#define CONFIG_PATH "/data/adb/riru/modules/" RIRU_MODULE_ID "/config"
-#define PROPS_PATH CONFIG_PATH "/properties"
-#define PACKAGES_PATH CONFIG_PATH "/packages"
+namespace Config {
+
+    namespace Properties {
+
+        void Put(const char *name, const char *value);
+    }
+
+    namespace Packages {
+
+        void Add(const char *name);
+    }
+}
+
 
 static std::map<std::string, Property *> props;
 static std::vector<std::string> packages;
@@ -51,7 +62,10 @@ void Packages::Add(const char *name) {
 }
 
 void Config::Load() {
-    foreach_dir(PROPS_PATH, [](int dirfd, struct dirent *entry) {
+    char buf[PATH_MAX];
+
+    snprintf(buf, PATH_MAX, "%s/config/properties", riru_get_magisk_module_path());
+    foreach_dir(buf, [](int dirfd, struct dirent *entry, bool *) {
         auto name = entry->d_name;
         int fd = openat(dirfd, name, O_RDONLY);
         if (fd == -1) return;
@@ -64,7 +78,8 @@ void Config::Load() {
         close(fd);
     });
 
-    foreach_dir(PACKAGES_PATH, [](int, struct dirent *entry) {
+    snprintf(buf, PATH_MAX, "%s/config/packages", riru_get_magisk_module_path());
+    foreach_dir(buf, [](int, struct dirent *entry, bool *) {
         auto name = entry->d_name;
         Packages::Add(name);
     });

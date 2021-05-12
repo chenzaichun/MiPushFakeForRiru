@@ -54,44 +54,6 @@ static void appProcessPre(JNIEnv *env, jint *uid, jstring *jNiceName, jstring *j
     }
 }
 
-void injectBuild(JNIEnv *env) {
-    if (env == nullptr) {
-        LOGW("failed to inject android.os.Build for %s due to env is null", saved_package_name);
-        return;
-    }
-    LOGI("inject android.os.Build for %s ", saved_package_name);
-
-    jclass build_class = env->FindClass("android/os/Build");
-    if (build_class == nullptr) {
-        LOGW("failed to inject android.os.Build for %s due to build is null", saved_package_name);
-        return;
-    }
-
-    jstring new_str = env->NewStringUTF("Xiaomi");
-
-    jfieldID brand_id = env->GetStaticFieldID(build_class, "BRAND", "Ljava/lang/String;");
-    if (brand_id != nullptr) {
-        env->SetStaticObjectField(build_class, brand_id, new_str);
-    }
-
-    jfieldID manufacturer_id = env->GetStaticFieldID(build_class, "MANUFACTURER", "Ljava/lang/String;");
-    if (manufacturer_id != nullptr) {
-        env->SetStaticObjectField(build_class, manufacturer_id, new_str);
-    }
-
-    jfieldID product_id = env->GetStaticFieldID(build_class, "PRODUCT", "Ljava/lang/String;");
-    if (product_id != nullptr) {
-        env->SetStaticObjectField(build_class, product_id, new_str);
-    }
-
-    if(env->ExceptionCheck())
-    {
-        env->ExceptionClear();
-    }
-
-    env->DeleteLocalRef(new_str);
-}
-
 static void appProcessPost(
         JNIEnv *env, const char *from, const char *package_name, jint uid) {
 
@@ -99,8 +61,9 @@ static void appProcessPost(
 
     if (Config::Packages::Find(package_name)) {
         LOGI("install hook for %d:%s", uid / 100000, package_name);
-        injectBuild(env);
         Hook::install();
+    } else {
+        riru_set_unload_allowed(true);
     }
 }
 
@@ -140,54 +103,36 @@ static void onModuleLoaded() {
 }
 
 extern "C" {
-
 int riru_api_version;
-RiruApiV9 *riru_api_v9;
+const char *riru_magisk_module_path;
+int *riru_allow_unload;
 
-void *init(void *arg) {
-    static int step = 0;
-    step += 1;
-
-    static void *_module;
-
-    switch (step) {
-        case 1: {
-            auto core_max_api_version = *(int *) arg;
-            riru_api_version = core_max_api_version <= RIRU_MODULE_API_VERSION ? core_max_api_version : RIRU_MODULE_API_VERSION;
-            return &riru_api_version;
+static auto module = RiruVersionedModuleInfo{
+        .moduleApiVersion = RIRU_MODULE_API_VERSION,
+        .moduleInfo= RiruModuleInfo{
+                .supportHide = true,
+                .version = RIRU_MODULE_VERSION,
+                .versionName = RIRU_MODULE_VERSION_NAME,
+                .onModuleLoaded = onModuleLoaded,
+                .forkAndSpecializePre = forkAndSpecializePre,
+                .forkAndSpecializePost = forkAndSpecializePost,
+                .forkSystemServerPre = nullptr,
+                .forkSystemServerPost = nullptr,
+                .specializeAppProcessPre = specializeAppProcessPre,
+                .specializeAppProcessPost = specializeAppProcessPost
         }
-        case 2: {
-            switch (riru_api_version) {
-                case 9: {
-                    riru_api_v9 = (RiruApiV9 *) arg;
+};
 
-                    auto module = (RiruModuleInfoV9 *) malloc(sizeof(RiruModuleInfoV9));
-                    memset(module, 0, sizeof(RiruModuleInfoV9));
-                    _module = module;
+RiruVersionedModuleInfo *init(Riru *riru) {
+    auto core_max_api_version = riru->riruApiVersion;
+    riru_api_version = core_max_api_version <= RIRU_MODULE_API_VERSION ? core_max_api_version : RIRU_MODULE_API_VERSION;
+    module.moduleApiVersion = riru_api_version;
 
-                    module->supportHide = true;
+    riru_magisk_module_path = strdup(riru->magiskModulePath);
+    riru_allow_unload = riru->allowUnload;
 
-                    module->version = RIRU_MODULE_VERSION;
-                    module->versionName = RIRU_MODULE_VERSION_NAME;
-                    module->onModuleLoaded = onModuleLoaded;
-                    module->forkAndSpecializePre = forkAndSpecializePre;
-                    module->forkAndSpecializePost = forkAndSpecializePost;
-                    module->specializeAppProcessPre = specializeAppProcessPre;
-                    module->specializeAppProcessPost = specializeAppProcessPost;
-                    return module;
-                }
-                default: {
-                    return nullptr;
-                }
-            }
-        }
-        case 3: {
-            free(_module);
-            return nullptr;
-        }
-        default: {
-            return nullptr;
-        }
-    }
+    LOGD("Supported Riru API version: %d", riru_api_version);
+    LOGD("Magisk module path: %s", riru_magisk_module_path);
+    return &module;
 }
 }
