@@ -73,5 +73,12 @@ fi
 extract "$ZIPFILE" 'create_config.sh' "$MODPATH"
 set_perm_recursive "$MODPATH" 0 0 0755 0644
 
-. $MODPATH/create_config.sh
-set_perm_recursive "$MODPATH/config" 0 0 0700 0600
+if [ -d "$CURRENT_MODPATH/config" ]; then
+  ui_print "- Use existing configuration"
+  cp -r "$CURRENT_MODPATH/config" "$MODPATH"/config
+fi
+if [ ! -d "$MODPATH/config" ]; then
+  ui_print "- Creating default configuration"
+  . $MODPATH/create_config.sh
+  set_perm_recursive "$MODPATH/config" 0 0 0700 0600
+fi
