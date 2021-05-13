@@ -1,0 +1,23 @@
+#/system/bin/sh
+MODID=riru-mipushfake
+MODDIR=/data/adb/modules/${MODID}
+PACKAGEDIR=${MODDIR}/config/packages
+
+inotify=`realpath $0`
+scripts_dir=`dirname ${inotify}`
+
+events=$1
+monitor_dir=$2
+monitor_file=$3
+
+main() {
+if [ ! -f ${MODDIR}/manual ] ; then
+  if [ "${events}" = "d" ] ; then
+    rm -f "${PACKAGEDIR}/${monitor_file}"
+  elif [ "${events}" = "n" ] ; then
+    touch "${PACKAGEDIR}/${monitor_file}"
+  fi
+fi
+}
+
+main

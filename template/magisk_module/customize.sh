@@ -70,7 +70,7 @@ if [ "$RIRU_API" -lt 11 ]; then
 fi
 
 # Extract create_config.sh
-extract "$ZIPFILE" 'create_config.sh' "$MODPATH"
+extract "$ZIPFILE" create_config.sh service.sh mipushfake.inotify "$MODPATH"
 set_perm_recursive "$MODPATH" 0 0 0755 0644
 
 if [ -d "$CURRENT_MODPATH/config" ]; then

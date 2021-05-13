@@ -8,3 +8,5 @@ echo -n "Xiaomi" > "$CONFIG_PATH/properties/ro.product.brand"
 echo -n "Xiaomi" > "$CONFIG_PATH/properties/ro.product.name"
 
 mkdir -p "$MODPATH/config/packages"
+
+mkdir -p "/data/misc/riru/modules/mipush_fake/packages"
